@@ -1,0 +1,17 @@
+/* Error: This variable was not declared with !default in the @used module.
+ *   ,
+ * 3 |   $primary-color: #ff0000,
+ *   |   ^^^^^^^^^^^^^^^^^^^^^^^
+ *   '
+ *   styles/styles.scss 3:3  root stylesheet */
+
+body::before {
+  font-family: "Source Code Pro", "SF Mono", Monaco, Inconsolata, "Fira Mono", "Droid Sans Mono",
+    monospace, monospace;
+  white-space: pre;
+  display: block;
+  padding: 1em;
+  margin-bottom: 1em;
+  border-bottom: 2px solid black;
+  content: "Error: This variable was not declared with !default in the @used module.\a   \2577 \a 3 \2502    $primary-color: #ff0000,\a   \2502    ^^^^^^^^^^^^^^^^^^^^^^^\a   \2575 \a   styles/styles.scss 3:3  root stylesheet";
+}

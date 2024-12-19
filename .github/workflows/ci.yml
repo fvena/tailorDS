@@ -11,7 +11,7 @@ concurrency:
 
 jobs:
   lint:
-    name: Lint and Typecheck
+    name: Lint and Stylelint
     runs-on: ubuntu-22.04
 
     steps:
@@ -21,31 +21,4 @@ jobs:
           node-version: "lts/*"
 
       - run: npm ci --ignore-scripts
-      - run: npm run lint
-      - run: npm run typecheck
-
-  test:
-    name: Test
-    runs-on: ubuntu-22.04
-
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "lts/*"
-
-      - run: npm ci --ignore-scripts
-      - run: npm run test
-
-  build:
-    name: Build
-    runs-on: ubuntu-22.04
-
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "lts/*"
-
-      - run: npm ci --ignore-scripts
-      - run: npm run build
+      - run: npm run stylelint

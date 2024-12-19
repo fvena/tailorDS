@@ -92,11 +92,64 @@ Your framework, your rules.
 npm install tailords
 ```
 
-## 🧑‍💻 Usage
+### Importing TailorDS to compile with SASS
 
-TailorDS is highly customizable. Here’s a basic example to get started:
+By default, the SASS compiler doesn't automatically search in node_modules for imports. You need to write the node_modules path in your SCSS file.
 
 ```scss
+@use "node_modules/tailords/scss/tailords" as *;
+```
+
+You need to configure your build script to include TailorDS files. There are two ways to do this:
+
+#### Option 1: Using `load-path`
+
+Configure your SCSS build script to include TailorDS files via the `--load-path` flag. Update your `package.json`:
+
+```json
+{
+  "scripts": {
+    "scss": "sass --load-path=node_modules/tailords/scss"
+  }
+}
+```
+
+Import TailorDS into your SCSS file:
+
+```scss
+@use "tailords" as *;
+```
+
+#### Option 2: Using `pkg:` URL
+
+Configure your SCSS build script to enable the `pkg:` URL scheme. Update your `package.json`:
+
+```json
+{
+  "scripts": {
+    "scss": "sass --pkg-importer=node"
+  }
+}
+```
+
+Import TailorDS using the `pkg:` prefix:
+
+```scss
+@use "pkg:tailords" as *;
+```
+
+## 🛠️ Usage
+
+The recommended way to integrate TailorDS is by creating a dedicated SCSS partial file for configuration. This file will import TailorDS and define your custom settings.
+
+### 1. Create a configuration file
+
+Create a partial file (e.g., \_tailor-config.scss) inside your styles folder.
+
+```scss
+// _tailorDS.scss
+
+// Import TailorDS
 @use "tailords" with (
   $colors: (
     primary: #3498db,
@@ -109,16 +162,190 @@ TailorDS is highly customizable. Here’s a basic example to get started:
   )
 );
 
-@include tailords.helpers();
+// Override default variables if needed
+$primary-color: #3498db; // Change the primary color
+$font-size-base: 16px; // Adjust the base font size
+
+// Enable or disable helper class generation
+$generate-spacing-helpers: true;
+$generate-color-helpers: false;
+
+// Define custom configurations
+$custom-breakpoints: (
+  "small": 480px,
+  "medium": 768px,
+  "large": 1024px,
+);
 ```
 
 Refer to the [Documentation]() for detailed examples and advanced usage.
 
+### 2. Use a centralized variables file
+
+It’s considered a best practice to have a centralized SCSS file in your project that exposes all your variables, functions, mixins, and third party settings. This file should not generate or include CSS directly.
+
+#### Why?
+
+1. **Avoid duplication**: If you import this file in multiple SCSS files, it won’t generate redundant CSS.
+1. **Reusable in component-based projects**: In Vue or React projects, this allows you to access variables, functions, and mixins without importing the file in every single component.
+1. **Cleaner structure**: Keeps your CSS and configuration separate.
+
+Include TailorDS and your custom configuration in your centralized variables file.
+
+```scss
+// _variables.scss
+
+// Import configured TailorDS
+@use "path/to/_tailorDS" as tds;
+
+// Expose your variables, mixins, and functions
+$primary-color: tds.$primary-color;
+$font-size-base: tds.$font-size-base;
+
+@function my-mixin {
+  @return tds.my-mixin;
+}
+```
+
+### 3. Import the Configuration File
+
+In your main SCSS file (e.g., styles.scss), include your configuration file:
+
+```scss
+// styles.scss
+
+// Import centralized TailorDS configuration
+@use "path/to/_variables" as *;
+
+// Use the variables and mixins
+body {
+  font-family: $font-family-sans;
+  background-color: $primary-color;
+}
+```
+
+### 4. Configure with Webpack o Vite
+
+If you're using Webpack or Vite, you can configure them to automatically include TailorDS and your settings in every SCSS file. This is especially useful in projects like Vue or React, where importing TailorDS in each component would be cumbersome.
+
+#### Vite Configuration
+
+Modify your vite.config.js file:
+
+```javascript
+import { defineConfig } from "vite";
+
+export default defineConfig({
+  css: {
+    preprocessorOptions: {
+      scss: {
+        additionalData: `@use "path/to/_variables" as *;`,
+      },
+    },
+  },
+});
+```
+
+#### Webpack
+
+Use the Webpack configuration file to import TailorDS as global styles:
+
+```javascript
+module.exports = {
+  module: {
+    rules: [
+      {
+        test: /\.scss$/,
+        use: [
+          "style-loader",
+          "css-loader",
+          {
+            loader: "sass-loader",
+            options: {
+              additionalData: `@use "path/to/_variables" as *;`,
+            },
+          },
+        ],
+      },
+    ],
+  },
+};
+```
+
+## 🔄 Notes About `@use` vs `@import`
+
+With the introduction of the `@use` directive, Sass has significantly changed how variables, functions, and mixins _(known as members in Sass)_ are scoped and accessed. Here’s an overview of the key differences and their implications:
+
+### Scoped Members vs Global Scope
+
+Previously, with `@import`, you could define a variable, function, or mixin in one file and use it anywhere, as long as the file had been imported earlier in the project.
+
+Now, with `@use`, each file must explicitly import the dependencies it uses. This means you must import a file in every place where its members are needed, ensuring a more modular and explicit structure.
+
+> **Note**: Files are imported only once, no matter how many times they are referenced in your project, improving efficiency.
+
+```scss
+// main.scss
+@use 'tailords';
+@use 'typography';
+
+...
+
+// typography.scss
+@use 'tailords';
+
+...
+```
+
+### Namespacing
+
+By default, all imported members are namespaced, reducing the risk of name collisions. This ensures:
+
+- **Avoiding Global Scope Conflicts**: Namespacing prevents accidental overwrites of common member names.
+- **Clear Dependency Management**: Each file explicitly manages its own imports.
+- **No Unintended Side Effects**: Imported members are only available in the file where they are explicitly used.
+- **Modular and Maintainable Code**: Dependencies are clearly defined and organized.
+- **Scalability for Large Projects**: Namespaced members make the codebase easier to navigate and extend.
+
+For example:
+
+```scss
+@use "colors";
+
+.button {
+  background-color: colors.$primary-color;
+}
+```
+
+You can also import members without a namespace by using the `as *` syntax. However, this approach is less recommended as it introduces the risk of global conflicts:
+
+```scss
+@use "colors" as *;
+
+.button {
+  background-color: $primary-color;
+}
+```
+
+### Using TailorDS with Namespaces
+
+If you want to import TailorDS with a namespace, we recommend using a short alias like `tds` for clarity and efficiency:
+
+```scss
+@use "tailords" as tds;
+
+.button {
+  background-color: tds.$primary-color;
+}
+```
+
+This approach reflects the precision and control that TailorDS embodies, ensuring your project is modular, scalable, and easy to maintain.
+
 ## 🗺️ Roadmap
 
-- [] Add a configuration generator tool.
-- [] Expand advanced documentation.
-- [] Introduce live preview features for rapid prototyping.
+- [ ] Add a configuration generator tool.
+- [ ] Expand advanced documentation.
+- [ ] Introduce live preview features for rapid prototyping.
 
 ## 🤝 Contributions
 

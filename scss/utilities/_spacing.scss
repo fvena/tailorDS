@@ -1,0 +1,10 @@
+// utilities/_spacing.scss
+@use "../_variables" as vars;
+
+@mixin spacing($property, $value) {
+  .#{$property}-#{$value} {
+    #{$property}: vars.$spacing-unit * $value;
+  }
+}
+
+@include spacing(margin, 2);
